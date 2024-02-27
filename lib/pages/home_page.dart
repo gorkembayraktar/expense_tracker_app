@@ -21,18 +21,20 @@ class _HomePageState extends State<HomePage> {
   TextEditingController amountController = TextEditingController();
 
   Future<Map<int, double>>? _montlyTotalsFuture;
+  Future<double>? _calculateCurrentMonthTotal;
 
   @override
   void initState() {
     Provider.of<ExpenseDatabase>(context, listen: false).readExpenses();
 
-    refreshGraphData();
+    refreshData();
 
     super.initState();
   }
 
-  void refreshGraphData(){
+  void refreshData(){
     _montlyTotalsFuture = Provider.of<ExpenseDatabase>(context, listen: false).calculateMonthlyTotals();
+    _calculateCurrentMonthTotal = Provider.of<ExpenseDatabase>(context, listen: false).calculateCurrentMonthTotal();
   }
 
   void openNewExpenseBox() {
@@ -119,6 +121,18 @@ class _HomePageState extends State<HomePage> {
                 onPressed: openNewExpenseBox,
                 child: const Icon(Icons.add),
               ),
+              appBar: AppBar(
+                backgroundColor: Colors.transparent,
+                title: FutureBuilder<double>(
+                  future: _calculateCurrentMonthTotal,
+                  builder: (context, snapshot){
+                    if(snapshot.connectionState == ConnectionState.done){
+                      return Center(child: Text('${snapshot.data!.toStringAsFixed(2)} ₺'));
+                    }
+                    return const Text('loading..');
+                  },
+                ),
+              ),
               body: Column(
                 children: [
                   SafeArea(
@@ -190,7 +204,7 @@ class _HomePageState extends State<HomePage> {
             await context.read<ExpenseDatabase>().createNewExpense(expense);
 
             // refresh graph data
-            refreshGraphData();
+            refreshData();
 
             nameController.clear();
             amountController.clear();
@@ -218,7 +232,7 @@ class _HomePageState extends State<HomePage> {
             await context.read<ExpenseDatabase>().updateExpense(existsId, updatedExpense);
 
             // refresh graph data
-            refreshGraphData();
+            refreshData();
 
             nameController.clear();
             amountController.clear();
@@ -234,7 +248,7 @@ class _HomePageState extends State<HomePage> {
           await context.read<ExpenseDatabase>().deleteExpense(id);
 
           // refresh graph data
-          refreshGraphData();
+          refreshData();
         }
       );
   }
