@@ -1,8 +1,11 @@
+import 'package:expense_tracker/bar%20graph/bar_graph.dart';
 import 'package:expense_tracker/components/my_list_tile.dart';
 import 'package:expense_tracker/database/expense_database.dart';
 import 'package:expense_tracker/helper/helper_functions.dart';
 import 'package:expense_tracker/models/expense.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 
 class HomePage extends StatefulWidget {
@@ -17,10 +20,19 @@ class _HomePageState extends State<HomePage> {
   TextEditingController nameController = TextEditingController();
   TextEditingController amountController = TextEditingController();
 
+  Future<Map<int, double>>? _montlyTotalsFuture;
+
   @override
   void initState() {
     Provider.of<ExpenseDatabase>(context, listen: false).readExpenses();
+
+    refreshGraphData();
+
     super.initState();
+  }
+
+  void refreshGraphData(){
+    _montlyTotalsFuture = Provider.of<ExpenseDatabase>(context, listen: false).calculateMonthlyTotals();
   }
 
   void openNewExpenseBox() {
@@ -88,25 +100,69 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Consumer<ExpenseDatabase>(
-        builder: (context, value, child) => Scaffold(
-            floatingActionButton: FloatingActionButton(
-              onPressed: openNewExpenseBox,
-              child: const Icon(Icons.add),
-            ),
-            body: ListView.builder(
-              itemCount: value.getExpense.length,
-              itemBuilder: (context, index){
-                Expense individaulExpense = value.getExpense[index];
+        builder: (context, value, child){
 
-                return MyListTile(
-                    title: individaulExpense.name,
-                    trailing: formatAmount(individaulExpense.amount),
-                    onEditPressed: (context) => openEditBox(individaulExpense),
-                    onDeletePressed: (context) => openDeleteBox(individaulExpense),
-                );
-              },
-            )
-        ));
+          int startMonth = value.getStartMonth();
+          int startYear = value.getStartYear();
+          int currentMonth = DateTime.now().month;
+          int currentYear = DateTime.now().year;
+
+          int monthCount = calculateMonthCount(startYear, startMonth, currentYear, currentMonth);
+
+          List<Expense> currentMonthExpenses = value.getExpense.where((expense){
+            return expense.date.year == currentYear && expense.date.month == currentMonth;
+          }).toList();
+
+          return Scaffold(
+              backgroundColor: Colors.grey.shade300,
+              floatingActionButton: FloatingActionButton(
+                onPressed: openNewExpenseBox,
+                child: const Icon(Icons.add),
+              ),
+              body: Column(
+                children: [
+                  SafeArea(
+                    child: SizedBox(
+                      height: 250,
+                      child: FutureBuilder(
+                          future: _montlyTotalsFuture,
+                          builder: (context, snapshot){
+                            if(snapshot.connectionState == ConnectionState.done){
+                              final monthlyTotals = snapshot.data ?? {};
+                              List<double> monthlySummary = List.generate(monthCount, (index) => monthlyTotals[startMonth + index] ?? 0.0);
+                    
+                              return MyBarGraph(monthlySummary: monthlySummary, startMonth: startMonth);
+                            }
+                    
+                            return const Center(child: Text('Loading..'),);
+                          }
+                      ),
+                    ),
+                  )
+                  ,
+                  Expanded(
+                      child: ListView.builder(
+                        itemCount: currentMonthExpenses.length,
+                        itemBuilder: (context, index){
+
+                          int reversedIndex = currentMonthExpenses.length - index - 1;
+
+                          Expense individaulExpense = currentMonthExpenses[reversedIndex];
+
+                          return MyListTile(
+                            title: individaulExpense.name,
+                            trailing: formatAmount(individaulExpense.amount),
+                            onEditPressed: (context) => openEditBox(individaulExpense),
+                            onDeletePressed: (context) => openDeleteBox(individaulExpense),
+                          );
+                        },
+                      )
+                  )
+                ],
+              )
+          );
+        }
+    );
   }
 
   Widget _cancelButton() {
@@ -132,6 +188,10 @@ class _HomePageState extends State<HomePage> {
                 date: DateTime.now());
 
             await context.read<ExpenseDatabase>().createNewExpense(expense);
+
+            // refresh graph data
+            refreshGraphData();
+
             nameController.clear();
             amountController.clear();
           }
@@ -156,6 +216,10 @@ class _HomePageState extends State<HomePage> {
             int existsId = expense.id;
 
             await context.read<ExpenseDatabase>().updateExpense(existsId, updatedExpense);
+
+            // refresh graph data
+            refreshGraphData();
+
             nameController.clear();
             amountController.clear();
 
@@ -168,6 +232,9 @@ class _HomePageState extends State<HomePage> {
         onPressed: () async {
           Navigator.pop(context);
           await context.read<ExpenseDatabase>().deleteExpense(id);
+
+          // refresh graph data
+          refreshGraphData();
         }
       );
   }
