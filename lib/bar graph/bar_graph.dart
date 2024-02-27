@@ -13,8 +13,35 @@ class MyBarGraph extends StatefulWidget {
 class _MyBarGraphState extends State<MyBarGraph> {
   List<IndividualBar> barData = [];
 
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) => scrollToEnd());
+  }
+
   void initializeBarData(){
     barData = List.generate(widget.monthlySummary.length, (index) => IndividualBar(x: index, y: widget.monthlySummary[index]));
+  }
+
+  double calculateMax(){
+    double max = 500;
+    widget.monthlySummary.sort();
+    max = widget.monthlySummary.last * 1.05;
+
+    if( max < 500){
+      return max;
+    }
+    return max;
+  }
+  final ScrollController _scrollController = ScrollController();
+  void scrollToEnd(){
+    _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(seconds: 1),
+        curve: Curves.fastOutSlowIn
+    );
   }
 
   @override
@@ -25,19 +52,12 @@ class _MyBarGraphState extends State<MyBarGraph> {
     double barWidth = 20;
     double spaceBetweensBar =   15;
 
-    double calculateMax(){
-      double max = 500;
-      widget.monthlySummary.sort();
-      max = widget.monthlySummary.last * 1.05;
 
-      if( max < 500){
-        return max;
-      }
-      return max;
-    }
+
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
+      controller: _scrollController,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 10),
         child: SizedBox(

@@ -20,7 +20,7 @@ class _HomePageState extends State<HomePage> {
   TextEditingController nameController = TextEditingController();
   TextEditingController amountController = TextEditingController();
 
-  Future<Map<int, double>>? _montlyTotalsFuture;
+  Future<Map<String, double>>? _montlyTotalsFuture;
   Future<double>? _calculateCurrentMonthTotal;
 
   @override
@@ -148,8 +148,16 @@ class _HomePageState extends State<HomePage> {
                           future: _montlyTotalsFuture,
                           builder: (context, snapshot){
                             if(snapshot.connectionState == ConnectionState.done){
-                              final monthlyTotals = snapshot.data ?? {};
-                              List<double> monthlySummary = List.generate(monthCount, (index) => monthlyTotals[startMonth + index] ?? 0.0);
+                              Map<String, double> monthlyTotals = snapshot.data ?? {};
+                              List<double> monthlySummary = List.generate(monthCount,
+                                      (index){
+                                          int year = startYear + (startMonth + index - 1) ~/ 12;
+                                          int month = (startMonth + index - 1) % 12  + 1;
+
+                                          String yearMonthKey = '$year-$month';
+                                          return monthlyTotals[yearMonthKey] ?? 0.0;
+                                      }
+                              );
                     
                               return MyBarGraph(monthlySummary: monthlySummary, startMonth: startMonth);
                             }
@@ -159,6 +167,8 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                   )
+                  ,
+                  SizedBox(height: 25,)
                   ,
                   Expanded(
                       child: ListView.builder(
@@ -171,6 +181,7 @@ class _HomePageState extends State<HomePage> {
 
                           return MyListTile(
                             title: individaulExpense.name,
+                            date: individaulExpense.date,
                             trailing: formatAmount(individaulExpense.amount),
                             onEditPressed: (context) => openEditBox(individaulExpense),
                             onDeletePressed: (context) => openDeleteBox(individaulExpense),

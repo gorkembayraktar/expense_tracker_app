@@ -4,42 +4,57 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 class MyListTile extends StatelessWidget {
   final String title;
   final String trailing;
+  final DateTime date;
   final void Function(BuildContext)? onEditPressed;
   final void Function(BuildContext)? onDeletePressed;
 
   const MyListTile(
       {super.key,
       required this.title,
+      required this.date,
       required this.trailing,
       required this.onEditPressed,
       required this.onDeletePressed});
 
   @override
   Widget build(BuildContext context) {
-    return Slidable(
-      endActionPane: ActionPane(
-        motion: const StretchMotion(),
-        children: [
-          SlidableAction(
-              onPressed: onEditPressed,
-              icon: Icons.settings,
-              backgroundColor: Colors.grey,
-              foregroundColor: Colors.white,
-              borderRadius: BorderRadius.circular(4),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5,horizontal: 25),
+      child: Slidable(
+        endActionPane: ActionPane(
+          motion: const StretchMotion(),
+          children: [
+            SlidableAction(
+                onPressed: onEditPressed,
+                icon: Icons.settings,
+                backgroundColor: Colors.grey,
+                foregroundColor: Colors.white,
+                borderRadius: BorderRadius.circular(4),
 
+            ),
+            SlidableAction(
+                onPressed: onDeletePressed,
+                icon: Icons.delete,
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                borderRadius: BorderRadius.circular(4),
+            )
+          ],
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(8)
           ),
-          SlidableAction(
-              onPressed: onDeletePressed,
-              icon: Icons.delete,
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-              borderRadius: BorderRadius.circular(4),
-          )
-        ],
-      ),
-      child: ListTile(
-        title: Text(title),
-        trailing: Text(trailing),
+          child: ListTile(
+            title: Text(title),
+            subtitle: Text(
+                "${date.year.toString()}-${date.month.toString().padLeft(2,'0')}-${date.day.toString().padLeft(2,'0')}",
+                style: const TextStyle(fontSize: 12),
+            ),
+            trailing: Text(trailing),
+          ),
+        ),
       ),
     );
   }
