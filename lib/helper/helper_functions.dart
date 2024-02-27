@@ -14,3 +14,22 @@ String formatAmount(double amount){
 int calculateMonthCount(int startYear, startMonth, currentYear, currentMonth){
   return (currentYear-startYear)  *12 + currentMonth-startMonth + 1;
 }
+
+String getCurrentMonthName(){
+  DateTime now = DateTime.now();
+  List<String> l = [
+      "OCK",
+      "ŞBT",
+      "MRT",
+      "NSN",
+      "MYS",
+      "HZR",
+      "TMZ",
+      "AUG",
+      "EYL",
+      "EKM",
+      "KSM",
+      "ARL"
+  ];
+  return l[now.month - 1];
+}

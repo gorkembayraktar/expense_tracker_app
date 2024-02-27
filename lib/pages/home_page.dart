@@ -127,7 +127,13 @@ class _HomePageState extends State<HomePage> {
                   future: _calculateCurrentMonthTotal,
                   builder: (context, snapshot){
                     if(snapshot.connectionState == ConnectionState.done){
-                      return Center(child: Text('${snapshot.data!.toStringAsFixed(2)} ₺'));
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('${snapshot.data!.toStringAsFixed(2)} ₺'),
+                          Text(getCurrentMonthName())
+                        ],
+                      );
                     }
                     return const Text('loading..');
                   },
